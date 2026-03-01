@@ -10,6 +10,7 @@ var cors = require("cors");
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 const connectDB = require('./config/db');
+const executeRoute = require("./routes/execute");
 
 connectDB();
 
@@ -24,6 +25,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use("/", executeRoute);
 
 app.use(cors());
 

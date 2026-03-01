@@ -6,11 +6,10 @@ import { api_base_url } from '../helper';
 import { toast } from 'react-toastify';
 
 const Editor = () => {
-  const [code, setCode] = useState(""); // State to hold the code
-  const { id } = useParams(); // Extract project ID from URL params
+  const [code, setCode] = useState("");
+  const { id } = useParams();
   const [output, setOutput] = useState("");
   const [error, setError] = useState(false);
-
   const [data, setData] = useState(null);
 
   // Fetch project data on mount
@@ -29,7 +28,7 @@ const Editor = () => {
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
-          setCode(data.project.code); // Set the fetched code
+          setCode(data.project.code);
           setData(data.project);
         } else {
           toast.error(data.msg);
@@ -44,7 +43,6 @@ const Editor = () => {
   // Save project function
   const saveProject = () => {
     const trimmedCode = code?.toString().trim();
-    console.log('Saving code:', trimmedCode);
 
     fetch(`${api_base_url}/saveProject`, {
       mode: 'cors',
@@ -80,7 +78,6 @@ const Editor = () => {
     }
   };
 
-  // Add and clean up keyboard event listener
   useEffect(() => {
     window.addEventListener('keydown', handleSaveShortcut);
     return () => {
@@ -88,52 +85,34 @@ const Editor = () => {
     };
   }, [code]);
 
-const runProject = async () => {
-  const languageMap = {
-    python: "python",
-    javascript: "javascript",
-    c: "c",
-    cpp: "cpp",
-    java: "java",
-    bash: "bash",
+  // ✅ Fixed: calls backend /execute instead of glot.io directly (fixes CORS)
+  const runProject = async () => {
+    try {
+      const res = await fetch(`${api_base_url}/execute`, {
+        mode: 'cors',
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          language: data.projLanguage,
+          code: code
+        })
+      });
+
+      const result = await res.json();
+      console.log(result);
+
+      const output = result.stdout || result.stderr || "No output";
+      setOutput(output);
+      setError(!!result.stderr);
+
+    } catch (err) {
+      console.error("Run error:", err);
+      setOutput("Error running code.");
+      setError(true);
+    }
   };
-
-  try {
-    const res = await fetch("https://glot.io/api/run/" + languageMap[data.projLanguage] + "/latest", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        files: [
-          {
-            name: "main" + (
-              data.projLanguage === "python" ? ".py" :
-              data.projLanguage === "javascript" ? ".js" :
-              data.projLanguage === "java" ? ".java" :
-              data.projLanguage === "c" ? ".c" :
-              data.projLanguage === "cpp" ? ".cpp" :
-              data.projLanguage === "bash" ? ".sh" : ""
-            ),
-            content: code
-          }
-        ]
-      })
-    });
-
-    const result = await res.json();
-    console.log(result);
-
-    const output = result.stdout || result.stderr || "No output";
-    setOutput(output);
-    setError(!!result.stderr);
-
-  } catch (err) {
-    console.error("Run error:", err);
-    setOutput("Error running code.");
-    setError(true);
-  }
-};
 
   return (
     <>
@@ -142,13 +121,11 @@ const runProject = async () => {
         <div className="left w-[50%] h-full">
           <Editor2
             onChange={(newCode) => {
-              console.log('New Code:', newCode);
               setCode(newCode || '');
             }}
             theme="vs-dark"
             height="100%"
             width="100%"
-            // ✅ Fixed: dynamic language instead of hardcoded "python"
             language={data?.projLanguage === "cpp" ? "cpp" : data?.projLanguage || "javascript"}
             value={code}
           />

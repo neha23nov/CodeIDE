@@ -88,22 +88,29 @@ const Editor = () => {
     };
   }, [code]);
 
-  const runProject = () => {
-    fetch("https://emkc.org/api/v2/piston/execute", {
+const runProject = async () => {
+  const languageMap = {
+    python: "python",
+    javascript: "javascript",
+    c: "c",
+    cpp: "cpp",
+    java: "java",
+    bash: "bash",
+  };
+
+  try {
+    const res = await fetch("https://glot.io/api/run/" + languageMap[data.projLanguage] + "/latest", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        language: data.projLanguage,
-        version: data.version,
         files: [
           {
-            // ✅ Fixed: wrapped ternary in parentheses to fix operator precedence
-            filename: data.name + (
+            name: "main" + (
               data.projLanguage === "python" ? ".py" :
-              data.projLanguage === "java" ? ".java" :
               data.projLanguage === "javascript" ? ".js" :
+              data.projLanguage === "java" ? ".java" :
               data.projLanguage === "c" ? ".c" :
               data.projLanguage === "cpp" ? ".cpp" :
               data.projLanguage === "bash" ? ".sh" : ""
@@ -112,24 +119,21 @@ const Editor = () => {
           }
         ]
       })
-    })
-      .then(res => res.json())
-      .then(data => {
-        console.log(data);
-        if (data && data.run) {
-          setOutput(data.run.output);
-          setError(data.run.code === 1 ? true : false);
-        } else {
-          setOutput("Error: Could not run code.");
-          setError(true);
-        }
-      })
-      .catch(err => {
-        console.error("Run error:", err);
-        setOutput("Error running code.");
-        setError(true);
-      });
-  };
+    });
+
+    const result = await res.json();
+    console.log(result);
+
+    const output = result.stdout || result.stderr || "No output";
+    setOutput(output);
+    setError(!!result.stderr);
+
+  } catch (err) {
+    console.error("Run error:", err);
+    setOutput("Error running code.");
+    setError(true);
+  }
+};
 
   return (
     <>

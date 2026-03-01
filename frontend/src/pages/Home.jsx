@@ -46,29 +46,18 @@ const Home = () => {
     }),
   };
 
-  const getRunTimes = async () => {
-    let res = await fetch("https://emkc.org/api/v2/piston/runtimes");
-    let data = await res.json();
-
-    const filteredLanguages = [
-      "python",
-      "javascript",
-      "c",
-      "c++",
-      "java",
-      "bash"
-    ];
-
-    const options = data
-      .filter(runtime => filteredLanguages.includes(runtime.language))
-      .map(runtime => ({
-        label: `${runtime.language} (${runtime.version})`,
-        value: runtime.language === "c++" ? "cpp" : runtime.language,
-        version: runtime.version,
-      }));
-
-    setLanguageOptions(options);
-  };
+  // ✅ Replace getRunTimes - no need to fetch from Piston anymore
+const getRunTimes = () => {
+  const options = [
+    { label: "Python", value: "python" },
+    { label: "JavaScript", value: "javascript" },
+    { label: "C", value: "c" },
+    { label: "C++", value: "cpp" },
+    { label: "Java", value: "java" },
+    { label: "Bash", value: "bash" },
+  ];
+  setLanguageOptions(options);
+};
 
   const handleLanguageChange = (selectedOption) => {
     setSelectedLanguage(selectedOption);
@@ -102,28 +91,28 @@ const Home = () => {
     getRunTimes();
   }, []);
 
-  const createProj = () => {
-    fetch(api_base_url + "/createProj", {
-      mode: "cors",
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name: name,
-        projLanguage: selectedLanguage.value,
-        token: localStorage.getItem("token"),
-        version: selectedLanguage.version
-      })
-    }).then(res => res.json()).then(data => {
-      if (data.success) {
-        setName("");
-        navigate("/editior/" + data.projectId);
-      } else {
-        toast.error(data.msg);
-      }
-    });
-  };
+
+const createProj = () => {
+  fetch(api_base_url + "/createProj", {
+    mode: "cors",
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name: name,
+      projLanguage: selectedLanguage.value,
+      token: localStorage.getItem("token"),
+    })
+  }).then(res => res.json()).then(data => {
+    if (data.success) {
+      setName("");
+      navigate("/editior/" + data.projectId);
+    } else {
+      toast.error(data.msg);
+    }
+  });
+};
 
   const deleteProject = (id) => {
     let conf = confirm("Are you sure you want to delete this project?");

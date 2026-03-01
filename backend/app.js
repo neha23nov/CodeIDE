@@ -5,7 +5,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 require("dotenv").config();
-var cors = require("cors");
+
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -28,7 +28,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use("/", executeRoute);
 
-app.use(cors());
+const cors = require("cors");
+
+app.use(cors({
+  origin: "https://project01-six-mu.vercel.app",
+  methods: ["GET", "POST"],
+  credentials: true
+}));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);

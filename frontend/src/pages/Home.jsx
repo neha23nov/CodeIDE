@@ -46,7 +46,7 @@ const Home = () => {
     }),
   };
 
-  // ✅ Replace getRunTimes - no need to fetch from Piston anymore
+
 const getRunTimes = () => {
   const options = [
     { label: "Python", value: "python" },

@@ -1,4 +1,4 @@
-#  Multi-Code IDE
+#  CodeIDE
 
 This project is a full-stack web application that allows users to create, edit, and manage coding projects in multiple programming languages. It features a React-based frontend and an Express.js backend, with MongoDB as the database.
 

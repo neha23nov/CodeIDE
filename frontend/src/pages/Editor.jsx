@@ -43,8 +43,8 @@ const Editor = () => {
 
   // Save project function
   const saveProject = () => {
-    const trimmedCode = code?.toString().trim(); // Ensure code is a string and trimmed
-    console.log('Saving code:', trimmedCode); // Debug log
+    const trimmedCode = code?.toString().trim();
+    console.log('Saving code:', trimmedCode);
 
     fetch(`${api_base_url}/saveProject`, {
       mode: 'cors',
@@ -55,7 +55,7 @@ const Editor = () => {
       body: JSON.stringify({
         token: localStorage.getItem('token'),
         projectId: id,
-        code: trimmedCode, // Use the latest code state
+        code: trimmedCode,
       }),
     })
       .then((res) => res.json())
@@ -75,8 +75,8 @@ const Editor = () => {
   // Shortcut handler for saving with Ctrl+S
   const handleSaveShortcut = (e) => {
     if (e.ctrlKey && e.key === 's') {
-      e.preventDefault(); // Prevent browser's default save behavior
-      saveProject(); // Call the save function
+      e.preventDefault();
+      saveProject();
     }
   };
 
@@ -86,7 +86,7 @@ const Editor = () => {
     return () => {
       window.removeEventListener('keydown', handleSaveShortcut);
     };
-  }, [code]); // Reattach when `code` changes
+  }, [code]);
 
   const runProject = () => {
     fetch("https://emkc.org/api/v2/piston/execute", {
@@ -99,17 +99,37 @@ const Editor = () => {
         version: data.version,
         files: [
           {
-            filename: data.name + data.projLanguage === "python" ? ".py" : data.projLanguage === "java" ? ".java" : data.projLanguage === "javascript" ? ".js" : data.projLanguage === "c" ? ".c" : data.projLanguage === "cpp" ? ".cpp" : data.projLanguage === "bash" ? ".sh" : "",
+            // ✅ Fixed: wrapped ternary in parentheses to fix operator precedence
+            filename: data.name + (
+              data.projLanguage === "python" ? ".py" :
+              data.projLanguage === "java" ? ".java" :
+              data.projLanguage === "javascript" ? ".js" :
+              data.projLanguage === "c" ? ".c" :
+              data.projLanguage === "cpp" ? ".cpp" :
+              data.projLanguage === "bash" ? ".sh" : ""
+            ),
             content: code
           }
         ]
       })
-    }).then(res => res.json()).then(data => {
-      console.log(data)
-      setOutput(data.run.output);
-      setError(data.run.code === 1 ? true : false);
     })
-  }
+      .then(res => res.json())
+      .then(data => {
+        console.log(data);
+        if (data && data.run) {
+          setOutput(data.run.output);
+          setError(data.run.code === 1 ? true : false);
+        } else {
+          setOutput("Error: Could not run code.");
+          setError(true);
+        }
+      })
+      .catch(err => {
+        console.error("Run error:", err);
+        setOutput("Error running code.");
+        setError(true);
+      });
+  };
 
   return (
     <>
@@ -118,14 +138,15 @@ const Editor = () => {
         <div className="left w-[50%] h-full">
           <Editor2
             onChange={(newCode) => {
-              console.log('New Code:', newCode); // Debug: Log changes
-              setCode(newCode || ''); // Update state
+              console.log('New Code:', newCode);
+              setCode(newCode || '');
             }}
             theme="vs-dark"
             height="100%"
             width="100%"
-            language="python"
-            value={code} // Bind editor to state
+            // ✅ Fixed: dynamic language instead of hardcoded "python"
+            language={data?.projLanguage === "cpp" ? "cpp" : data?.projLanguage || "javascript"}
+            value={code}
           />
         </div>
         <div className="right p-[15px] w-[50%] h-full bg-[#27272a]">
@@ -133,13 +154,12 @@ const Editor = () => {
             <p className="p-0 m-0">Output</p>
             <button
               className="btnNormal !w-fit !px-[20px] bg-blue-500 transition-all hover:bg-blue-600"
-              onClick={runProject} // Save when clicking the button
+              onClick={runProject}
             >
               run
             </button>
-
           </div>
-            <pre className={`w-full h-[75vh] ${error ? "text-red-500" : ""}`} style={{textWrap: "nowrap"}}>{output}</pre>
+          <pre className={`w-full h-[75vh] ${error ? "text-red-500" : ""}`} style={{ textWrap: "nowrap" }}>{output}</pre>
         </div>
       </div>
     </>
